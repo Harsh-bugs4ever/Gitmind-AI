@@ -1,128 +1,46 @@
-GitMind 🚀
-
+# GitMind 🧠
 AI-Powered Repository Intelligence Platform
 
-GitMind is an AI-powered platform designed to help open source maintainers manage GitHub repositories more efficiently.
+## Setup Instructions
 
-The platform uses AI, semantic search, and repository analytics to automate repetitive maintainer tasks such as issue triaging, duplicate issue detection, release note generation, and repository querying using natural language.
-
-GitMind allows maintainers to interact with repositories conversationally instead of manually searching through issues and pull requests.
-
----
-
-✨ Features
-
-💬 Natural Language Repository Chat
-
-Ask repositories questions in plain English.
-
-Examples:
-
-- "What bugs were fixed last week?"
-- "Which PRs are stale?"
-- "Who is the most active contributor?"
-
----
-
-🤖 Duplicate Issue Detection
-
-Detects semantically similar GitHub issues automatically using embeddings.
-
----
-
-📝 AI Release Notes Generator
-
-Generates release notes automatically from merged pull requests.
-
----
-
-📊 Repository Health Dashboard
-
-Displays:
-
-- Open issues
-- PR activity
-- Contributor activity
-- Stale PRs
-
----
-
-🏗 System Architecture
-
-User
-  ↓
-React Frontend
-  ↓
-FastAPI Backend
-  ↓
-Claude API + Coral
-  ↓
-GitHub API + PostgreSQL
-
----
-
-🛠 Tech Stack
-
-Frontend
-
-- React
-- TailwindCSS
-- Recharts
-
-Backend
-
-- FastAPI
+### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- Coral CLI
 - PostgreSQL
 
-AI
+### Installation
 
-- Claude API
-- sentence-transformers
+1. Clone the repo:
+git clone https://github.com/Harsh-bugs4ever/Gitmind-AI.git
+cd Gitmind-AI
 
-Repository Data
+2. Install Coral:
+curl -fsSL https://withcoral.com/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+coral source add --interactive github
 
-- Coral
-- GitHub API
-
----
-
-📂 Project Structure
-
-gitmind-ai/
-│
-├── frontend/
-├── backend/
-├── ai-services/
-├── docs/
-├── README.md
-
----
-
-⚡ Getting Started
-
-Clone Repository
-
-git clone https://github.com/YOUR_USERNAME/gitmind-ai.git
-cd gitmind-ai
-
----
-
-Frontend Setup
-
-cd frontend
-npm install
-npm run dev
-
----
-
-Backend Setup
-
+3. Setup backend:
 cd backend
 pip install -r requirements.txt
+cp .env.example .env
+# Fill in your .env values
 uvicorn main:app --reload
 
----
+4. Setup frontend:
+cd frontend
+npm install
+npm start
 
-🎯 Goal
+## Team Structure
+- AI/ML Engineer: ai/ folder, ai branch
+- Backend Engineer: backend/ folder, backend branch
+- Frontend Engineer: frontend/ folder, frontend branch
+- DevOps/Integration: root folder, main branch
 
-Help open source maintainers automate repetitive repository management tasks using AI.
+## API Docs
+See API_CONTRACTS.md for all endpoints.
+
+## Live Demo
+- Frontend: https://gitmind.vercel.app
+- Backend: https://gitmind-api.onrender.com
