@@ -1,0 +1,103 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Github, MessageSquare, Copy, FileText, ArrowRight, Zap, BarChart2 } from 'lucide-react';
+import LoginModal from '../components/auth/LoginModal';
+
+const Landing = () => {
+  const navigate = useNavigate();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-git-dark text-white relative overflow-hidden font-sans">
+      {/* Background glowing effects */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-blue/20 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-purple/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* Navbar Minimal */}
+      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
+        <div className="flex items-center space-x-2">
+          <Zap className="text-accent-blue" size={24} />
+          <span className="font-bold text-xl tracking-tight text-white">Gitmind-AI</span>
+        </div>
+        <div className="flex items-center space-x-6">
+          <a href="https://github.com" target="_blank" rel="noreferrer" className="text-git-muted hover:text-white transition-colors">
+            <Github size={20} />
+          </a>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32 text-center">
+        <div className="inline-flex items-center px-4 py-2 rounded-full glass-panel text-sm text-accent-blue mb-8 border border-accent-blue/30 shadow-[0_0_15px_rgba(88,166,255,0.15)]">
+          <span className="flex h-2 w-2 rounded-full bg-accent-blue mr-3 animate-pulse"></span>
+          Powered by HPSA
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
+          Understand your GitHub <br />
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-blue via-accent-purple to-accent-blue animate-gradient-x">
+            repos with AI
+          </span>
+        </h1>
+
+        <p className="text-xl text-git-muted max-w-2xl mx-auto mb-12">
+          Ask questions, detect duplicate issues, auto-generate release notes, and monitor repo health — all natively integrated with your workflow.
+        </p>
+
+        <button
+          onClick={() => setIsLoginModalOpen(true)}
+          className="px-8 py-4 bg-accent-blue hover:bg-blue-600 text-white rounded-xl font-bold text-lg transition-all duration-300 shadow-[0_0_30px_rgba(88,166,255,0.4)] hover:shadow-[0_0_50px_rgba(88,166,255,0.6)] flex items-center space-x-3 mx-auto group hover:-translate-y-1"
+        >
+          <span>Get Started</span>
+          <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
+        </button>
+
+        {/* Feature Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mt-32 text-left">
+          <div className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group cursor-default">
+            <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-accent-blue mb-6 group-hover:scale-110 transition-transform">
+              <MessageSquare size={24} />
+            </div>
+            <h3 className="text-xl font-semibold mb-3">Natural Language Chat</h3>
+            <p className="text-git-muted leading-relaxed">
+              Query your repository history, bugs, and contributor stats using natural language, converted instantly to data queries.
+            </p>
+          </div>
+
+          <div className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group cursor-default">
+            <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-accent-purple mb-6 group-hover:scale-110 transition-transform">
+              <Copy size={24} />
+            </div>
+            <h3 className="text-xl font-semibold mb-3">Duplicate Detection</h3>
+            <p className="text-git-muted leading-relaxed">
+              Automatically identify semantically similar issues before they pollute your backlog using Gemini's advanced embedding analysis.
+            </p>
+          </div>
+
+          <div className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group cursor-default">
+            <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400 mb-6 group-hover:scale-110 transition-transform">
+              <FileText size={24} />
+            </div>
+            <h3 className="text-xl font-semibold mb-3">AI Release Notes</h3>
+            <p className="text-git-muted leading-relaxed">
+              Generate perfectly categorized, professional release notes from merged PR titles in seconds.
+            </p>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-git-border py-8 text-center text-git-muted">
+        <p className="flex items-center justify-center space-x-2">
+          <span>Built for Developers 2026</span>
+          <span className="w-1 h-1 rounded-full bg-git-muted"></span>
+          <span>Gitmind-AI</span>
+        </p>
+      </footer>
+
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+    </div>
+  );
+};
+
+export default Landing;
