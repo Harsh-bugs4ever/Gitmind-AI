@@ -43,7 +43,7 @@ const LoginModal = ({ isOpen, onClose }) => {
         <div className="p-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-git-muted text-sm">Sign in to continue to Gitmind-AI</p>
+            <p className="text-git-muted text-sm">Sign in to continue to <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple font-semibold">Gitmind-AI</span></p>
           </div>
 
           <button 
