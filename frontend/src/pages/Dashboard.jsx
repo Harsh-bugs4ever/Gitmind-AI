@@ -57,7 +57,7 @@ const Dashboard = ({ connectedRepo }) => {
         </div>
         <h2 className="text-2xl font-bold mb-2">Connect a Repository</h2>
         <p className="text-git-muted max-w-md">
-          Enter a GitHub repository URL or name (e.g., vercel/next.js) in the sidebar to view its health metrics and analytics.
+          Enter a GitHub repository URL or name (e.g. link) in the sidebar to view its health metrics and analytics.
         </p>
       </div>
     );
