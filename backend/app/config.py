@@ -28,8 +28,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # --- AI keys (optional until Claude / sentence-transformers are wired up) ---
-    anthropic_api_key: str = Field(default="", description="Anthropic Claude API key")
+    # --- AI keys (optional until Gemini / sentence-transformers are wired up) ---
+    gemini_api_key: str = Field(default="", description="Google Gemini API key")
+    gemini_model: str = Field(default="gemini-2.5-flash", description="Gemini model name")
     github_token: str = Field(default="", description="GitHub Personal Access Token")
     github_webhook_secret: str = Field(default="", description="HMAC secret for GitHub webhooks")
 

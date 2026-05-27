@@ -22,7 +22,7 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: str = Field(..., description="Claude's natural-language answer")
+    answer: str = Field(..., description="Gemini's natural-language answer")
     sql: str = Field(..., description="SQL query that was generated and executed")
 
 
@@ -69,7 +69,7 @@ class ReleaseNotes(BaseModel):
     bug_fixes: list[str] = Field(default_factory=list)
     performance: list[str] = Field(default_factory=list)
     breaking_changes: list[str] = Field(default_factory=list)
-    raw: str = Field("", description="Raw Claude output (useful for debugging)")
+    raw: str = Field("", description="Raw Gemini output (useful for debugging)")
 
 
 # ---------------------------------------------------------------------------
