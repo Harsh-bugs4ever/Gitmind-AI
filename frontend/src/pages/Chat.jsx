@@ -149,7 +149,7 @@ Use this live data to answer the user's questions accurately. If they ask about 
       {/* Right Panel - Chat Interface */}
       <div className="flex-1 glass-panel flex flex-col overflow-hidden relative shadow-[0_0_40px_rgba(0,0,0,0.5)]">
         <div className="p-4 border-b border-git-border bg-[#161b22]/80 backdrop-blur-md z-10 flex items-center">
-          <Bot className="text-accent-blue mr-3" size={24} />
+          <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain mr-3" />
           <div>
             <h2 className="font-semibold text-white">Gitmind-AI Assistant</h2>
           </div>
@@ -168,8 +168,8 @@ Use this live data to answer the user's questions accurately. If they ask about 
                       <User size={16} />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-git-dark border border-git-border flex items-center justify-center text-accent-blue shadow-[0_0_10px_rgba(88,166,255,0.3)]">
-                      <Bot size={16} />
+                    <div className="w-8 h-8 rounded-full bg-git-dark border border-git-border flex items-center justify-center shadow-[0_0_10px_rgba(88,166,255,0.3)] overflow-hidden">
+                      <img src="/logo.png" alt="AI" className="w-8 h-8 object-cover scale-110" />
                     </div>
                   )}
                 </div>
@@ -190,8 +190,8 @@ Use this live data to answer the user's questions accurately. If they ask about 
             <div className="flex justify-start">
               <div className="flex max-w-[80%]">
                 <div className="flex-shrink-0 mx-3">
-                  <div className="w-8 h-8 rounded-full bg-git-dark border border-git-border flex items-center justify-center text-accent-blue shadow-[0_0_10px_rgba(88,166,255,0.3)]">
-                    <Bot size={16} />
+                  <div className="w-8 h-8 rounded-full bg-git-dark border border-git-border flex items-center justify-center shadow-[0_0_10px_rgba(88,166,255,0.3)] overflow-hidden">
+                    <img src="/logo.png" alt="AI" className="w-8 h-8 object-cover scale-110" />
                   </div>
                 </div>
                 <div className="p-4 rounded-2xl rounded-tl-sm bg-[#1c2128] border border-git-border flex items-center space-x-2">

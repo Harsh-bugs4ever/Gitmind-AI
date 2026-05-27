@@ -46,9 +46,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, connectedRepo, setConnectedRepo 
       {/* Logo Area */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-git-border">
         <div className={`flex items-center space-x-3 overflow-hidden ${isCollapsed ? 'justify-center w-full' : ''}`}>
-          <div className="relative flex-shrink-0">
-            <Zap className="text-accent-blue animate-pulse-slow relative z-10" size={28} />
-            <div className="absolute inset-0 bg-accent-blue/30 blur-md rounded-full"></div>
+          <div className="relative flex-shrink-0 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 relative z-10 object-contain brightness-125" />
           </div>
           {!isCollapsed && (
             <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple">
@@ -100,7 +99,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, connectedRepo, setConnectedRepo 
               type="text" 
               value={repoInput}
               onChange={(e) => setRepoInput(e.target.value)}
-              placeholder="e.g. vercel/next.js"
+              placeholder="e.g. link"
               className="input-field text-sm py-1.5"
             />
             <button type="submit" className="btn-primary w-full text-sm py-1.5">
