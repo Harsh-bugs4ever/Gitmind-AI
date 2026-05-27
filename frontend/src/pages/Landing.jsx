@@ -15,9 +15,9 @@ const Landing = () => {
 
       {/* Navbar Minimal */}
       <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center space-x-2">
-          <Zap className="text-accent-blue" size={24} />
-          <span className="font-bold text-xl tracking-tight text-white">Gitmind-AI</span>
+        <div className="flex items-center space-x-3">
+          <img src="/logo.png" alt="Gitmind-AI Logo" className="w-20 h-20 object-contain brightness-125" />
+          <span className="font-bold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple">Gitmind-AI</span>
         </div>
         <div className="flex items-center space-x-6">
           <a href="https://github.com" target="_blank" rel="noreferrer" className="text-git-muted hover:text-white transition-colors">
@@ -91,7 +91,7 @@ const Landing = () => {
         <p className="flex items-center justify-center space-x-2">
           <span>Built for Developers 2026</span>
           <span className="w-1 h-1 rounded-full bg-git-muted"></span>
-          <span>Gitmind-AI</span>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple font-semibold">Gitmind-AI</span>
         </p>
       </footer>
 
