@@ -28,6 +28,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+<<<<<<< HEAD
     # --- AI keys ---
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
     gemini_model: str = Field(default="gemini-2.0-flash", description="Gemini model ID")
@@ -45,6 +46,11 @@ class Settings(BaseSettings):
         description="Frontend URL that receives OAuth token after successful login",
     )
 
+=======
+    # --- AI keys (optional until Gemini / sentence-transformers are wired up) ---
+    gemini_api_key: str = Field(default="", description="Google Gemini API key")
+    gemini_model: str = Field(default="gemini-2.5-flash", description="Gemini model name")
+>>>>>>> ff6d417 (Done AI work)
     github_token: str = Field(default="", description="GitHub Personal Access Token")
     github_webhook_secret: str = Field(default="", description="HMAC secret for GitHub webhooks")
 

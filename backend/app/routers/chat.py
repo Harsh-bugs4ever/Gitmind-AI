@@ -2,8 +2,12 @@
 GitMind Backend — POST /api/chat
 
 Accepts a natural-language question about a GitHub repo, converts it to SQL
+<<<<<<< HEAD
 via Gemini, runs it through `coral sql`, then summarises the
 result (placeholder).
+=======
+via Gemini, runs it through `coral sql`, then summarises the result.
+>>>>>>> ff6d417 (Done AI work)
 """
 from __future__ import annotations
 
@@ -27,7 +31,7 @@ async def chat(body: ChatRequest) -> ChatResponse:
     3. Summarise the raw result using Gemini.
     4. Return the answer + the generated SQL for transparency.
     """
-    # Step 1 — generate SQL (placeholder returns example query)
+    # Step 1 — generate SQL
     try:
         sql = gemini.generate_sql(body.question, body.owner, body.repo)
     except Exception as exc:
@@ -41,7 +45,7 @@ async def chat(body: ChatRequest) -> ChatResponse:
         logger.error("coral sql failed: %s", exc)
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # Step 3 — summarise result (placeholder echoes the raw data)
+    # Step 3 — summarise result
     try:
         answer = gemini.summarise_query_result(body.question, sql, raw_result)
     except Exception as exc:
