@@ -94,8 +94,8 @@ const ReleaseNotes = () => {
       {/* Left Panel - Input (40%) */}
       <div className="w-full md:w-5/12 glass-panel p-6 flex flex-col h-full">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-green-500/10 text-green-400 rounded-lg">
-            <Sparkles size={20} />
+          <div className="p-2 bg-green-500/10 rounded-lg flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
           <h2 className="text-xl font-bold">Release Details</h2>
         </div>
