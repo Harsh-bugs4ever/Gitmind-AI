@@ -21,41 +21,50 @@ const Landing = () => {
           <img src="/logo.png" alt="Gitmind-AI Logo" className="w-20 h-20 object-contain brightness-125" />
           <span className="font-bold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple">Gitmind-AI</span>
         </div>
-        <div className="flex items-center space-x-6 pointer-events-auto">
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="text-git-muted hover:text-white transition-colors">
-            <Github size={20} />
-          </a>
+        <div className="flex items-center space-x-4 pointer-events-auto">
+          <button
+            onClick={() => setIsLoginModalOpen(true)}
+            className="text-git-muted hover:text-white font-medium transition-colors"
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => navigate('/register')}
+            className="px-4 py-2 bg-accent-blue/10 text-accent-blue hover:bg-accent-blue hover:text-white border border-accent-blue/20 rounded-lg font-medium transition-all duration-300 shadow-[0_0_15px_rgba(88,166,255,0.15)] hover:shadow-[0_0_25px_rgba(88,166,255,0.3)]"
+          >
+            Register
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
       <main className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32 text-center pointer-events-none">
-        <div className="inline-flex items-center px-4 py-2 rounded-full glass-panel text-sm text-accent-blue mb-8 border border-accent-blue/30 shadow-[0_0_15px_rgba(88,166,255,0.15)] pointer-events-auto">
+        <div className="inline-flex items-center px-4 py-2 rounded-full glass-panel text-sm text-accent-blue mb-8 border border-accent-blue/30 shadow-[0_0_15px_rgba(88,166,255,0.15)] pointer-events-auto opacity-0 animate-fade-in-up">
           <span className="flex h-2 w-2 rounded-full bg-accent-blue mr-3 animate-pulse"></span>
           Powered by HPSA
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight pointer-events-auto">
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight pointer-events-auto opacity-0 animate-fade-in-up-delay-1">
           Understand your GitHub <br />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent-blue via-accent-purple to-accent-blue animate-gradient-x">
             repos with AI
           </span>
         </h1>
 
-        <p className="text-xl text-git-muted max-w-2xl mx-auto mb-12 pointer-events-auto">
+        <p className="text-xl text-git-muted max-w-2xl mx-auto mb-12 pointer-events-auto opacity-0 animate-fade-in-up-delay-2">
           Ask questions, detect duplicate issues, auto-generate release notes, and monitor repo health — all natively integrated with your workflow.
         </p>
 
         <button
           onClick={() => setIsLoginModalOpen(true)}
-          className="px-8 py-4 bg-accent-blue hover:bg-blue-600 text-white rounded-xl font-bold text-lg transition-all duration-300 shadow-[0_0_30px_rgba(88,166,255,0.4)] hover:shadow-[0_0_50px_rgba(88,166,255,0.6)] flex items-center space-x-3 mx-auto group hover:-translate-y-1 pointer-events-auto"
+          className="px-8 py-4 bg-accent-blue hover:bg-blue-600 text-white rounded-xl font-bold text-lg transition-all duration-300 shadow-[0_0_30px_rgba(88,166,255,0.4)] hover:shadow-[0_0_50px_rgba(88,166,255,0.6)] flex items-center space-x-3 mx-auto group hover:-translate-y-1 pointer-events-auto opacity-0 animate-fade-in-up-delay-2"
         >
           <span>Get Started</span>
           <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
         </button>
 
         {/* Feature Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mt-32 text-left pointer-events-auto">
+        <div className="grid md:grid-cols-3 gap-6 mt-32 text-left pointer-events-auto opacity-0 animate-fade-in-up-delay-3">
           <div className="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group cursor-default">
             <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-accent-blue mb-6 group-hover:scale-110 transition-transform">
               <MessageSquare size={24} />
