@@ -13,7 +13,7 @@ FastAPI backend for the GitMind GitHub repository intelligence platform.
 ```bash
 # 1. Copy environment variables
 cp .env.example .env
-# Edit .env — fill in DATABASE_URL, ANTHROPIC_API_KEY, GITHUB_TOKEN
+# Edit .env — fill in DATABASE_URL, GEMINI_API_KEY, GITHUB_TOKEN
 
 # 2. Install dependencies (using uv — recommended)
 uv pip install -e .
@@ -35,7 +35,8 @@ Interactive docs: **http://localhost:8000/docs**
 | Variable                | Required | Description                              |
 |-------------------------|----------|------------------------------------------|
 | `DATABASE_URL`          | Yes      | PostgreSQL DSN (`postgresql://user:pw@host:5432/dbname`) |
-| `ANTHROPIC_API_KEY`     | TODO     | Claude API key (placeholder active until set) |
+| `GEMINI_API_KEY`        | Yes      | Google Gemini API key for AI features |
+| `GEMINI_MODEL`          | No       | Gemini model name (defaults to `gemini-2.5-flash`) |
 | `GITHUB_TOKEN`          | TODO     | GitHub PAT (used in webhook validation)  |
 | `GITHUB_WEBHOOK_SECRET` | No       | HMAC secret for GitHub webhook signature check |
 
@@ -68,7 +69,7 @@ backend/
     ├── database.py            # psycopg2 connection pool + schema bootstrap
     ├── models.py              # Pydantic request/response models
     ├── coral.py               # subprocess wrapper for `coral sql`
-    ├── claude.py              # Claude API placeholder (TODO: wire up Anthropic SDK)
+    ├── gemini.py              # Gemini API integration
     ├── embeddings.py          # Embedding placeholder (TODO: wire up sentence-transformers)
     └── routers/
         ├── chat.py            # POST /api/chat
@@ -80,20 +81,15 @@ backend/
 
 ---
 
-## AI/ML Placeholders
+## AI/ML Modules
 
-The following modules contain **placeholder stubs** that must be replaced
-by the AI/ML engineer:
+Gemini powers the chat and release-note endpoints. Embeddings still require
+the optional sentence-transformers dependency.
 
-### `app/claude.py`
-- `generate_sql()` → Call Anthropic Claude to convert question → SQL
+### `app/gemini.py`
+- `generate_sql()` → Call Gemini to convert question → SQL
 - `summarise_query_result()` → Summarise coral output in natural language
 - `generate_release_notes()` → Categorise PR titles into release sections
-
-**When ready**, install the dependency:
-```bash
-uv pip install anthropic>=0.28.0
-```
 
 ### `app/embeddings.py`
 - `embed()` → Generate sentence-transformers vector
