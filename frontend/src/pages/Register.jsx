@@ -43,7 +43,7 @@ const Register = () => {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-purple/10 rounded-full blur-3xl -z-10 -translate-x-1/3 translate-y-1/3" />
 
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+          <h2 className="text-3xl font-bold mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-accent-purple">
             Welcome to Gitmind-AI
           </h2>
           <p className="text-git-muted">Sign in to sync your repositories and access advanced analytics.</p>
