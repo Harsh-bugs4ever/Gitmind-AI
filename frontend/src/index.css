@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-git-dark text-git-text font-sans antialiased overflow-x-hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-git-dark;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-git-border rounded-full hover:bg-git-muted transition-colors;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-git-card/80 backdrop-blur-md border border-git-border rounded-xl shadow-lg;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-accent-blue text-white rounded-lg font-medium hover:bg-blue-600 transition-all duration-200 shadow-[0_0_15px_rgba(88,166,255,0.3)] hover:shadow-[0_0_25px_rgba(88,166,255,0.5)];
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-git-card border border-git-border text-git-text rounded-lg font-medium hover:bg-git-border transition-all duration-200 hover:text-white;
+  }
+
+  .input-field {
+    @apply w-full bg-git-dark border border-git-border rounded-lg px-4 py-2 text-git-text focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent transition-all;
+  }
+}
