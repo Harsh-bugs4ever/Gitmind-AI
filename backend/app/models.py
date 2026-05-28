@@ -22,8 +22,39 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    answer: str = Field(..., description="Claude's natural-language answer")
+    answer: str = Field(..., description="Gemini's natural-language answer")
     sql: str = Field(..., description="SQL query that was generated and executed")
+
+
+# ---------------------------------------------------------------------------
+# API_CONTRACTS.md compatibility models
+# ---------------------------------------------------------------------------
+
+class ReleaseNotesRequest(BaseModel):
+    owner: str = Field(..., min_length=1, description="GitHub organisation or user name")
+    repo: str = Field(..., min_length=1, description="GitHub repository name")
+
+
+class ReleaseNotesResponse(BaseModel):
+    notes: str
+
+
+class IssuesDuplicatePair(BaseModel):
+    issue_1: int
+    issue_2: int
+    similarity: float = Field(..., ge=0.0, le=1.0)
+
+
+class IssuesListResponse(BaseModel):
+    issues: list[Any] = Field(default_factory=list, description="Raw issue rows returned by Coral")
+    duplicates: list[IssuesDuplicatePair] = Field(default_factory=list)
+
+
+class DashboardResponse(BaseModel):
+    open_issues: int
+    merged_prs: int
+    contributors: int
+    stale_prs: int
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +100,7 @@ class ReleaseNotes(BaseModel):
     bug_fixes: list[str] = Field(default_factory=list)
     performance: list[str] = Field(default_factory=list)
     breaking_changes: list[str] = Field(default_factory=list)
-    raw: str = Field("", description="Raw Claude output (useful for debugging)")
+    raw: str = Field("", description="Raw Gemini output (useful for debugging)")
 
 
 # ---------------------------------------------------------------------------
