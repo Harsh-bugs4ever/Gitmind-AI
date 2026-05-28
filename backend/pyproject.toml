@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 # --- Optional AI/ML dependencies (install when ready) ---
-# anthropic>=0.28.0
+# google-genai>=1.0.0
 # sentence-transformers>=3.0.0
 # numpy>=1.26.0
 
