@@ -16,7 +16,7 @@ import google.generativeai as genai
 logger = logging.getLogger(__name__)
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-MODEL = "gemini-1.5-flash"
+MODEL = "gemini-2.5-flash-lite"
 
 _CORAL_SCHEMA = """
 Tables available in Coral (SQL over GitHub):
