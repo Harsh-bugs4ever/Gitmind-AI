@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, AlertTriangle, CheckCircle, Search, ArrowRight } from 'lucide-react';
-import { getIssues } from '../services/githubService';
-import { callGemini } from '../services/geminiService';
-import StatusBadge from '../components/ui/StatusBadge';
+import { Copy, AlertTriangle, CheckCircle, Search } from 'lucide-react';
+import { checkDuplicateIssue } from '../services/geminiService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const DuplicateDetector = ({ connectedRepo }) => {
@@ -10,62 +8,24 @@ const DuplicateDetector = ({ connectedRepo }) => {
   const [inputDesc, setInputDesc] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [results, setResults] = useState(null); // null means hasn't searched yet
-  const [repoIssues, setRepoIssues] = useState([]);
-  const [loadingIssues, setLoadingIssues] = useState(false);
-
-  React.useEffect(() => {
-    if (!connectedRepo) return;
-    const fetchIssues = async () => {
-      setLoadingIssues(true);
-      try {
-        const [owner, repo] = connectedRepo.split('/');
-        const issues = await getIssues(owner, repo);
-        // Take up to 30 most recent open issues for the corpus
-        setRepoIssues(issues.filter(i => i.state === 'open').slice(0, 30));
-      } catch (error) {
-        console.error("Failed to fetch issues for duplicate detection", error);
-      } finally {
-        setLoadingIssues(false);
-      }
-    };
-    fetchIssues();
-  }, [connectedRepo]);
+  const [error, setError] = useState(null);
 
   const handleCheck = async () => {
     if (!inputTitle.trim()) return;
 
     setIsChecking(true);
-    
-    // Stringify real issues for the AI prompt
-    const mockIssuesContext = repoIssues.map(i => `[#${i.number}] ${i.title}`).join('\n');
-    
-    const prompt = `New Issue Title: ${inputTitle}\nNew Issue Description: ${inputDesc}`;
-    
-    const systemContext = `You are a duplicate issue detection system. Given this new issue and these existing issues: \n${mockIssuesContext}\nIdentify which existing issues are semantically similar or potentially duplicate. 
-    Return a JSON response (array of objects) where each object has:
-    - "issueNumber" (number)
-    - "similarityScore" (number between 0 and 100)
-    - "explanation" (string explaining why)
-    Only include matches above 50% similarity. If no matches, return an empty array [].
-    Make sure to return valid JSON ONLY, no markdown formatting.`;
+    setError(null);
 
     try {
-      const response = await callGemini(prompt, systemContext);
-      
-      // Clean up markdown JSON formatting if the AI includes it
-      const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsedResults = JSON.parse(cleanedResponse);
-      
-      // Merge with issue details
-      const enrichedResults = parsedResults.map(match => {
-        const issue = repoIssues.find(i => i.number === match.issueNumber);
-        return { ...match, issue };
-      }).filter(r => r.issue); // Only keep valid ones
-      
-      setResults(enrichedResults);
+      const response = await checkDuplicateIssue({
+        title: inputTitle,
+        description: inputDesc,
+        connectedRepo,
+      });
+      setResults(response.matches || []);
     } catch (error) {
       console.error("Failed to detect duplicates:", error);
-      // Fallback for demo purposes if AI parsing fails
+      setError(error.message || "Failed to check for duplicates.");
       setResults([]);
     } finally {
       setIsChecking(false);
@@ -172,7 +132,13 @@ const DuplicateDetector = ({ connectedRepo }) => {
                 <LoadingSpinner size={48} />
                 <div className="absolute inset-0 bg-accent-blue/20 blur-xl rounded-full"></div>
               </div>
-              <p className="text-accent-blue animate-pulse">Scanning repository history with Gemini...</p>
+              <p className="text-accent-blue animate-pulse">Scanning repository history through the backend...</p>
+            </div>
+          )}
+
+          {error && !isChecking && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg p-4 text-sm">
+              {error}
             </div>
           )}
 
@@ -193,16 +159,15 @@ const DuplicateDetector = ({ connectedRepo }) => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-git-muted text-sm">#{match.issue.number}</span>
-                        <StatusBadge status={match.issue.state} />
+                        <span className="text-git-muted text-sm">Stored issue</span>
                       </div>
                       <h4 className="font-semibold text-white group-hover:text-accent-blue transition-colors">
-                        {match.issue.title}
+                        #{match.issue_id}
                       </h4>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold" style={{ color: match.similarityScore >= 80 ? '#f85149' : '#d29922' }}>
-                        {match.similarityScore}%
+                      <div className="text-2xl font-bold" style={{ color: match.similarity >= 0.8 ? '#f85149' : '#d29922' }}>
+                        {Math.round(match.similarity * 100)}%
                       </div>
                       <div className="text-xs text-git-muted">Match Score</div>
                     </div>
@@ -211,49 +176,23 @@ const DuplicateDetector = ({ connectedRepo }) => {
                   {/* Similarity Progress Bar */}
                   <div className="w-full h-1.5 bg-git-dark rounded-full overflow-hidden mb-4">
                     <div 
-                      className={`h-full ${getScoreColor(match.similarityScore)}`} 
-                      style={{ width: `${match.similarityScore}%` }}
+                      className={`h-full ${getScoreColor(match.similarity * 100)}`}
+                      style={{ width: `${Math.round(match.similarity * 100)}%` }}
                     ></div>
                   </div>
 
                   <div className="bg-git-dark p-3 rounded-lg border border-git-border">
                     <div className="flex items-start space-x-2">
                       <AlertTriangle size={16} className="text-yellow-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-git-text">{match.explanation}</p>
+                      <p className="text-sm text-git-text">
+                        Backend similarity search found this stored issue above the duplicate threshold.
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex justify-end">
-                    <button className="text-accent-blue text-sm font-medium flex items-center hover:underline">
-                      View Original Issue <ArrowRight size={14} className="ml-1" />
-                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        {/* Existing Issues Reference (Read-only bottom panel) */}
-        <div className="glass-panel p-4 overflow-hidden h-48 flex flex-col">
-          <h3 className="text-sm font-semibold text-git-muted uppercase tracking-wider mb-3 flex items-center justify-between">
-            <span>Reference Corpus (Recent Issues)</span>
-            {loadingIssues && <LoadingSpinner size={14} />}
-          </h3>
-          <div className="overflow-y-auto pr-2 space-y-2">
-            {!loadingIssues && repoIssues.length === 0 && (
-              <div className="text-sm text-git-muted italic">No recent open issues found to use as corpus.</div>
-            )}
-            {repoIssues.map(issue => (
-              <div key={issue.number} className="flex items-center space-x-3 text-sm py-1 border-b border-git-border/50 last:border-0">
-                <span className="text-git-muted w-14">#{issue.number}</span>
-                <span className="truncate flex-1 text-git-text">{issue.title}</span>
-                {issue.labels && issue.labels.length > 0 && (
-                  <span className="w-2 h-2 rounded-full" style={{backgroundColor: `#${issue.labels[0].color}`}}></span>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

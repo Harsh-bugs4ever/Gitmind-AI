@@ -1,6 +1,12 @@
 # GitMind 🧠
 AI-Powered Repository Intelligence Platform
 
+## Architecture Note
+
+GitMind uses **Google Gemini** as the AI provider. Gemini is responsible for
+natural-language-to-SQL generation, summarising repository query results, and
+release-note generation.
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -8,6 +14,7 @@ AI-Powered Repository Intelligence Platform
 - Node.js 18+
 - Coral CLI
 - PostgreSQL
+- Google Gemini API key
 
 ### Installation
 
@@ -24,7 +31,7 @@ coral source add --interactive github
 cd backend
 pip install -r requirements.txt
 cp .env.example .env
-# Fill in your .env values
+# Fill in DATABASE_URL, GEMINI_API_KEY, and other .env values
 uvicorn main:app --reload
 
 4. Setup frontend:

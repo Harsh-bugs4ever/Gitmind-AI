@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Github, User, LogOut, CircleDot, GitPullRequest } from 'lucide-react';
+import { Bell, Github, User, LogOut, GitCommit } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getIssues } from '../../services/githubService';
+import { getRepoCommits } from '../../services/geminiService';
 
 const Navbar = ({ connectedRepo }) => {
   const location = useLocation();
@@ -40,10 +40,8 @@ const Navbar = ({ connectedRepo }) => {
       }
       setLoadingNotifications(true);
       try {
-        const [owner, repo] = connectedRepo.split('/');
-        const issues = await getIssues(owner, repo);
-        // Map top 5 issues to notifications
-        setNotifications(issues.slice(0, 5));
+        const response = await getRepoCommits(connectedRepo, { pageSize: 5 });
+        setNotifications(response.commits || []);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
       } finally {
@@ -117,18 +115,14 @@ const Navbar = ({ connectedRepo }) => {
                 ) : notifications.length > 0 ? (
                   <div className="divide-y divide-git-border">
                     {notifications.map((item) => (
-                      <div key={item.id || item.number} className="p-4 hover:bg-git-dark/50 transition-colors cursor-pointer flex gap-3">
+                      <div key={item.sha} className="p-4 hover:bg-git-dark/50 transition-colors cursor-pointer flex gap-3">
                         <div className="mt-0.5 flex-shrink-0">
-                          {item.pull_request ? (
-                            <GitPullRequest size={16} className="text-purple-400" />
-                          ) : (
-                            <CircleDot size={16} className={item.state === 'open' ? 'text-green-400' : 'text-red-400'} />
-                          )}
+                          <GitCommit size={16} className="text-green-400" />
                         </div>
                         <div>
-                          <p className="text-sm text-white font-medium line-clamp-2 leading-snug">{item.title}</p>
+                          <p className="text-sm text-white font-medium line-clamp-2 leading-snug">{item.message}</p>
                           <p className="text-xs text-git-muted mt-1">
-                            #{item.number} opened by {item.user?.login}
+                            {item.sha} by {item.author}
                           </p>
                         </div>
                       </div>

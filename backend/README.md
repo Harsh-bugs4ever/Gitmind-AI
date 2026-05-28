@@ -7,6 +7,7 @@ FastAPI backend for the GitMind GitHub repository intelligence platform.
 - Python 3.10+
 - PostgreSQL (running locally or remotely)
 - [Coral CLI](https://withcoral.com) installed and on your `PATH`
+- Google Gemini API key
 
 ## Quick Start
 
@@ -40,8 +41,8 @@ Interactive docs: **http://localhost:8000/docs**
 | `GITHUB_REDIRECT_URI`   | Yes      | OAuth callback URL (backend endpoint)    |
 | `FRONTEND_AUTH_SUCCESS_URL` | Yes  | Frontend callback URL that receives `token` |
 | `DATABASE_URL`          | Yes      | PostgreSQL DSN (`postgresql://user:pw@host:5432/dbname`) |
-| `GEMINI_API_KEY`        | Yes      | Google Gemini API key for AI endpoints         |
-| `GEMINI_MODEL`          | No       | Gemini model name (default: `gemini-2.0-flash`) |
+| `GEMINI_API_KEY`        | Yes      | Google Gemini API key for AI features |
+| `GEMINI_MODEL`          | No       | Gemini model name (defaults to `gemini-2.5-flash`) |
 | `GITHUB_TOKEN`          | TODO     | GitHub PAT (used in webhook validation)  |
 | `GITHUB_WEBHOOK_SECRET` | No       | HMAC secret for GitHub webhook signature check |
 
@@ -80,7 +81,7 @@ backend/
     ├── database.py            # psycopg2 connection pool + schema bootstrap
     ├── models.py              # Pydantic request/response models
     ├── coral.py               # subprocess wrapper for `coral sql`
-    ├── gemini.py              # Gemini integration for SQL/summary/release notes
+    ├── gemini.py              # Gemini API integration
     ├── embeddings.py          # Embedding placeholder (TODO: wire up sentence-transformers)
     └── routers/
         ├── chat.py            # POST /api/chat
@@ -92,29 +93,20 @@ backend/
 
 ---
 
-## AI/ML Placeholders
+## AI/ML Modules
 
-The following modules contain **placeholder stubs** that must be replaced
-by the AI/ML engineer:
+Gemini powers the chat and release-note endpoints. Embeddings still require
+the optional sentence-transformers dependency.
 
 ### `app/gemini.py`
-- `generate_sql()` → Convert question → SQL with Gemini
+- `generate_sql()` → Call Gemini to convert question → SQL
 - `summarise_query_result()` → Summarise coral output in natural language
 - `generate_release_notes()` → Categorise PR titles into release sections
-
-The implementation uses `httpx` to call Gemini directly, so no extra SDK is required.
 
 ### `app/embeddings.py`
 - `embed()` → Generate sentence-transformers vector
 - `cosine_similarity()` → Real vector similarity
 - `find_similar()` → Filter stored embeddings above threshold
-
-**When ready**, install the dependencies:
-```bash
-uv pip install sentence-transformers>=3.0.0 numpy>=1.26.0
-```
-
----
 
 ## Database Schema
 
