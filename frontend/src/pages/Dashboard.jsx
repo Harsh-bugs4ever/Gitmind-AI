@@ -5,16 +5,19 @@ import {
 } from 'recharts';
 import { AlertCircle, GitMerge, Users, Clock, Search, GitPullRequest, CircleDot } from 'lucide-react';
 import { getRepoInfo, getIssues, getPullRequests, getContributors, getRepoAnalytics } from '../services/githubService';
+import { useAuth } from '../context/AuthContext';
 import SectionHeader from '../components/ui/SectionHeader';
 import StatusBadge from '../components/ui/StatusBadge';
 import SkeletonCard from '../components/ui/SkeletonCard';
 
 const Dashboard = ({ connectedRepo }) => {
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [repoData, setRepoData] = useState(null);
   const [issues, setIssues] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [backendMetrics, setBackendMetrics] = useState(null);
   
   const COLORS = ['#d73a4a', '#a2eeef', '#0075ca', '#d876e3', '#e3b341'];
 
@@ -25,23 +28,34 @@ const Dashboard = ({ connectedRepo }) => {
     try {
       const [owner, repo] = connectedRepo.split('/');
       
-      const [repoInfo, repoIssues, repoAnalytics] = await Promise.all([
+      const [repoInfo, repoIssues, repoAnalytics, dashboardRes] = await Promise.all([
         getRepoInfo(owner, repo),
         getIssues(owner, repo),
-        getRepoAnalytics(owner, repo)
+        getRepoAnalytics(owner, repo),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/dashboard?owner=${owner}&repo=${repo}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
       ]);
+
+      if (!dashboardRes.ok) {
+        throw new Error(`Backend dashboard request failed (${dashboardRes.status})`);
+      }
+      const dashboardJson = await dashboardRes.json();
 
       setRepoData(repoInfo);
       setIssues(repoIssues.slice(0, 5)); // Top 5 recent activity
       setAnalytics(repoAnalytics);
+      setBackendMetrics(dashboardJson);
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
       const errorMessage = err.response?.data?.message || err.message || "Unknown error";
-      setError(`Failed to fetch repository data. GitHub API says: "${errorMessage}". Please ensure the repository exists and you haven't hit the GitHub API rate limit.`);
+      setError(`Failed to fetch repository data. Error: "${errorMessage}".`);
     } finally {
       setLoading(false);
     }
-  }, [connectedRepo]);
+  }, [connectedRepo, token]);
 
   useEffect(() => {
     if (connectedRepo) {
@@ -57,7 +71,7 @@ const Dashboard = ({ connectedRepo }) => {
         </div>
         <h2 className="text-2xl font-bold mb-2">Connect a Repository</h2>
         <p className="text-git-muted max-w-md">
-          Enter a GitHub repository URL or name (e.g., vercel/next.js) in the sidebar to view its health metrics and analytics.
+          Enter a GitHub repository URL or name (e.g. link) in the sidebar to view its health metrics and analytics.
         </p>
       </div>
     );
@@ -100,8 +114,10 @@ const Dashboard = ({ connectedRepo }) => {
 
   if (!analytics) return null;
 
-  const openIssuesCount = analytics.issueGrowth[analytics.issueGrowth.length - 1].open;
-  const closedIssuesCount = analytics.issueGrowth[analytics.issueGrowth.length - 1].closed;
+  const openIssuesCount = backendMetrics?.open_issues ?? 0;
+  const mergedPRsCount = backendMetrics?.merged_prs ?? 0;
+  const contributorsCount = backendMetrics?.contributors ?? 0;
+  const stalePRsCount = backendMetrics?.stale_prs ?? 0;
   
   return (
     <div className="space-y-8 pb-10">
@@ -114,8 +130,8 @@ const Dashboard = ({ connectedRepo }) => {
             <h3 className="font-medium text-sm">Open Issues</h3>
           </div>
           <div className="text-3xl font-bold mt-2">{openIssuesCount}</div>
-          <div className="text-sm text-red-400 mt-2 flex items-center">
-            <span className="mr-1">↑ 12%</span> from last month
+          <div className="text-sm text-git-muted mt-2 flex items-center">
+            Live from backend API
           </div>
         </div>
 
@@ -125,10 +141,10 @@ const Dashboard = ({ connectedRepo }) => {
             <h3 className="font-medium text-sm">Merged PRs</h3>
           </div>
           <div className="text-3xl font-bold mt-2">
-            {analytics.prActivity.reduce((acc, curr) => acc + curr.merged, 0)}
+            {mergedPRsCount}
           </div>
-          <div className="text-sm text-green-400 mt-2 flex items-center">
-            <span className="mr-1">↑ 5%</span> this month
+          <div className="text-sm text-git-muted mt-2 flex items-center">
+            Live from backend API
           </div>
         </div>
 
@@ -137,8 +153,8 @@ const Dashboard = ({ connectedRepo }) => {
             <Users size={20} className="text-accent-blue" />
             <h3 className="font-medium text-sm">Active Contributors</h3>
           </div>
-          <div className="text-3xl font-bold mt-2">{analytics.activeContributorsCount}</div>
-          <div className="text-sm text-git-muted mt-2">Total contributors</div>
+          <div className="text-3xl font-bold mt-2">{contributorsCount}</div>
+          <div className="text-sm text-git-muted mt-2">Live from backend API</div>
         </div>
 
         <div className="glass-panel p-6 flex flex-col group hover:-translate-y-1 transition-transform">
@@ -146,7 +162,7 @@ const Dashboard = ({ connectedRepo }) => {
             <Clock size={20} className="text-yellow-400" />
             <h3 className="font-medium text-sm">Stale PRs</h3>
           </div>
-          <div className="text-3xl font-bold mt-2">{analytics.stalePRsCount}</div>
+          <div className="text-3xl font-bold mt-2">{stalePRsCount}</div>
           <div className="text-sm text-yellow-400 mt-2">Open &gt; 30 days</div>
         </div>
       </div>
