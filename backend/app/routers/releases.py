@@ -1,7 +1,7 @@
 """
 GitMind Backend — GET /api/releases/generate
 
-Fetches merged PR titles via coral sql, sends them to Claude (placeholder),
+Fetches merged PR titles via coral sql, sends them to Gemini,
 and returns structured release notes split into categories.
 """
 from __future__ import annotations
@@ -11,7 +11,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app import claude, coral
+from app import coral, gemini
 from app.models import ReleaseNotes
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ async def generate_release_notes(
 ) -> ReleaseNotes:
     """
     1. Fetch merged PR titles via ``coral sql``.
-    2. Send titles to Claude (placeholder today) for categorisation.
+    2. Send titles to Gemini for categorisation.
     3. Parse the JSON response into a structured ReleaseNotes object.
     """
     sql = _MERGED_PRS_SQL.format(owner=owner, repo=repo)
@@ -58,18 +58,18 @@ async def generate_release_notes(
     if not pr_titles:
         return ReleaseNotes(raw="No merged PRs found in the last 90 days.")
 
-    # Step 2 — send to Claude for categorisation (placeholder)
+    # Step 2 — send to Gemini for categorisation
     try:
-        notes_json_str = claude.generate_release_notes(pr_titles, owner, repo)
+        notes_json_str = gemini.generate_release_notes(pr_titles, owner, repo)
     except Exception as exc:
-        logger.exception("Claude release notes generation failed")
+        logger.exception("Gemini release notes generation failed")
         raise HTTPException(status_code=500, detail=f"AI error: {exc}") from exc
 
-    # Step 3 — parse the JSON Claude (or the placeholder) returns
+    # Step 3 — parse the JSON Gemini returns
     try:
         notes_dict = json.loads(notes_json_str)
     except json.JSONDecodeError:
-        logger.warning("Claude response was not valid JSON; storing as raw.")
+        logger.warning("Gemini response was not valid JSON; storing as raw.")
         notes_dict = {}
 
     return ReleaseNotes(
