@@ -1,32 +1,118 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 
-// Initialize the API client. In a real app, ensure this key is not exposed to the client in production,
-// but for a hackathon/frontend-only requirement, we use the env variable.
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.REACT_APP_GEMINI_API_KEY || 'dummy_key';
-const genAI = new GoogleGenerativeAI(apiKey);
+const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
-export const callGemini = async (prompt, systemContext = '') => {
+const parseConnectedRepo = (connectedRepo) => {
+  const [owner, repo] = (connectedRepo || '').split('/');
+
+  if (!owner || !repo) {
+    throw new Error('Connected repository must be in "owner/repo" format.');
+  }
+
+  return { owner, repo };
+};
+
+const extractBackendError = (error, fallback) => {
+  return (
+    error.response?.data?.detail ||
+    error.response?.data?.error ||
+    error.message ||
+    fallback
+  );
+};
+
+export const askRepoQuestion = async (question, connectedRepo) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const { data } = await axios.post(`${backendBaseUrl}/api/chat`, {
+      question,
+      owner,
+      repo,
+    });
 
-    const fullPrompt = systemContext 
-      ? `System Context: ${systemContext}\n\nUser Prompt: ${prompt}`
-      : prompt;
-
-    const result = await model.generateContent(fullPrompt);
-    const response = result.response;
-    return response.text();
+    return data;
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    
-    // Check if it's a rate limit or auth error to provide a better message
-    if (error.message?.includes('429')) {
-      return "Error: Gemini API rate limit exceeded. Please try again later.";
-    }
-    if (error.message?.includes('API key not valid')) {
-      return "Error: Invalid Gemini API key. Please check your .env file.";
-    }
-    
-    return "Error: Failed to generate response from Gemini AI. Please try again.";
+    console.error('Error calling backend chat API:', error);
+    throw new Error(extractBackendError(error, 'Failed to generate a response from the backend.'));
+  }
+};
+
+export const checkDuplicateIssue = async ({ title, description = '', connectedRepo }) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+  const text = [title, description].filter(Boolean).join('\n\n');
+
+  try {
+    const { data } = await axios.post(`${backendBaseUrl}/api/issues/check-duplicate`, {
+      text,
+      owner,
+      repo,
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error calling backend duplicate check API:', error);
+    throw new Error(extractBackendError(error, 'Failed to check for duplicate issues.'));
+  }
+};
+
+export const generateReleaseNotes = async (connectedRepo) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+
+  try {
+    const { data } = await axios.get(`${backendBaseUrl}/api/releases/generate`, {
+      params: { owner, repo },
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error calling backend release notes API:', error);
+    throw new Error(extractBackendError(error, 'Failed to generate release notes.'));
+  }
+};
+
+export const getRepoStats = async (connectedRepo) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+
+  try {
+    const { data } = await axios.get(`${backendBaseUrl}/api/repo/stats`, {
+      params: { owner, repo },
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error calling backend repository stats API:', error);
+    throw new Error(extractBackendError(error, 'Failed to fetch repository stats.'));
+  }
+};
+
+export const getRepoTrends = async (connectedRepo) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+
+  try {
+    const { data } = await axios.get(`${backendBaseUrl}/api/repo/trends`, {
+      params: { owner, repo },
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error calling backend repository trends API:', error);
+    throw new Error(extractBackendError(error, 'Failed to fetch repository trends.'));
+  }
+};
+
+export const getRepoCommits = async (connectedRepo, options = {}) => {
+  const { owner, repo } = parseConnectedRepo(connectedRepo);
+  const { page = 1, pageSize = 10, ref = 'HEAD' } = options;
+
+  try {
+    const { data } = await axios.get(`${backendBaseUrl}/api/repo/commits`, {
+      params: { owner, repo, page, page_size: pageSize, ref },
+    });
+
+    return data;
+  } catch (error) {
+    console.error('Error calling backend repository commits API:', error);
+    throw new Error(extractBackendError(error, 'Failed to fetch repository commits.'));
   }
 };

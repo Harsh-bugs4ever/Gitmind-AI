@@ -28,23 +28,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # --- AI keys ---
+    # --- AI keys (optional until Gemini / sentence-transformers are wired up) ---
     gemini_api_key: str = Field(default="", description="Google Gemini API key")
-    gemini_model: str = Field(default="gemini-2.0-flash", description="Gemini model ID")
-
-    # --- Auth ---
-    auth_secret_key: str = Field(default="", description="Secret key used to sign access tokens")
-    github_client_id: str = Field(default="", description="GitHub OAuth app client ID")
-    github_client_secret: str = Field(default="", description="GitHub OAuth app client secret")
-    github_redirect_uri: str = Field(
-        default="http://localhost:8000/auth/github/callback",
-        description="GitHub OAuth callback URL",
-    )
-    frontend_auth_success_url: str = Field(
-        default="http://localhost:5173/auth/callback",
-        description="Frontend URL that receives OAuth token after successful login",
-    )
-
+    gemini_model: str = Field(default="gemini-2.5-flash", description="Gemini model name")
     github_token: str = Field(default="", description="GitHub Personal Access Token")
     github_webhook_secret: str = Field(default="", description="HMAC secret for GitHub webhooks")
 
