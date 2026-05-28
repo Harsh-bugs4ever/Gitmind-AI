@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Github, MessageSquare, Terminal } from 'lucide-react';
-import { callGemini } from '../services/geminiService';
-import { getIssues, getPullRequests, getContributors } from '../services/githubService';
-import SectionHeader from '../components/ui/SectionHeader';
+import { askRepoQuestion } from '../services/geminiService';
 
 const EXAMPLE_QUESTIONS = [
   "What bugs were fixed last week?",
@@ -20,8 +18,6 @@ const Chat = ({ connectedRepo }) => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const [repoContextStr, setRepoContextStr] = useState("");
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -29,37 +25,6 @@ const Chat = ({ connectedRepo }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  useEffect(() => {
-    if (!connectedRepo) return;
-    const fetchContext = async () => {
-      try {
-        const [owner, repo] = connectedRepo.split('/');
-        const [issues, prs, contributors] = await Promise.all([
-          getIssues(owner, repo),
-          getPullRequests(owner, repo),
-          getContributors(owner, repo)
-        ]);
-
-        const openIssues = issues.filter(i => i.state === 'open').slice(0, 10).map(i => `#${i.number} ${i.title}`).join(', ');
-        const recentPRs = prs.slice(0, 10).map(p => `#${p.number} ${p.title} (Status: ${p.state})`).join(', ');
-        const topContributors = contributors ? contributors.slice(0, 5).map(c => c.login).join(', ') : 'None';
-
-        const contextStr = `
-          Repository: ${connectedRepo}
-          Active Contributors (${contributors ? contributors.length : 0} total): ${topContributors}
-          Recent Open Issues: ${openIssues || 'None'}
-          Recent PRs: ${recentPRs || 'None'}
-          Total open issues count: ${issues.filter(i => i.state === 'open').length}
-          Total PRs count: ${prs.length}
-        `;
-        setRepoContextStr(contextStr);
-      } catch (e) {
-        console.error("Failed to load repo context for chat", e);
-      }
-    };
-    fetchContext();
-  }, [connectedRepo]);
 
   const handleSend = async (text) => {
     if (!connectedRepo) return;
@@ -71,15 +36,15 @@ const Chat = ({ connectedRepo }) => {
     setInput('');
     setIsLoading(true);
 
-    const systemContext = `You are a GitHub repository analyst for ${connectedRepo}. Here is the real-time data context for the repository:
-${repoContextStr}
-Use this live data to answer the user's questions accurately. If they ask about contributors, PRs, or issues, use the provided context. Convert complex queries into explanations and simulate what SQL query would be used if requested. If providing SQL, wrap it in \`\`\`sql\n ... \n\`\`\` block.`;
-
     try {
-      const aiResponseText = await callGemini(userText, systemContext);
+      const { answer, sql } = await askRepoQuestion(userText, connectedRepo);
+      const aiResponseText = sql ? `${answer}\n\n\`\`\`sql\n${sql}\n\`\`\`` : answer;
       setMessages(prev => [...prev, { role: 'ai', content: aiResponseText }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I encountered an error while processing your request." }]);
+      setMessages(prev => [
+        ...prev,
+        { role: 'ai', content: error.message || "Sorry, I encountered an error while processing your request." }
+      ]);
     } finally {
       setIsLoading(false);
     }

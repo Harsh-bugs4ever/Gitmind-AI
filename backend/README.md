@@ -7,6 +7,7 @@ FastAPI backend for the GitMind GitHub repository intelligence platform.
 - Python 3.10+
 - PostgreSQL (running locally or remotely)
 - [Coral CLI](https://withcoral.com) installed and on your `PATH`
+- Google Gemini API key
 
 ## Quick Start
 
@@ -103,8 +104,8 @@ backend/
 
 ## AI/ML Modules
 
-Gemini powers the chat and release-note endpoints. Embeddings still require
-the optional sentence-transformers dependency.
+Gemini powers the chat and release-note endpoints. Sentence-transformers powers
+duplicate issue detection.
 
 ### `app/gemini.py`
 <<<<<<< HEAD
@@ -124,13 +125,6 @@ The implementation uses `httpx` to call Gemini directly, so no extra SDK is requ
 - `embed()` → Generate sentence-transformers vector
 - `cosine_similarity()` → Real vector similarity
 - `find_similar()` → Filter stored embeddings above threshold
-
-**When ready**, install the dependencies:
-```bash
-uv pip install sentence-transformers>=3.0.0 numpy>=1.26.0
-```
-
----
 
 ## Database Schema
 

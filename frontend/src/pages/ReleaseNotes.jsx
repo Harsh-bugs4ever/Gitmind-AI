@@ -1,40 +1,53 @@
 import React, { useState } from 'react';
-import { FileText, Download, Copy, Calendar, Tag, Sparkles } from 'lucide-react';
-import { callGemini } from '../services/geminiService';
+import { FileText, Download, Copy, Calendar, Github, Sparkles } from 'lucide-react';
+import { generateReleaseNotes } from '../services/geminiService';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
-const ReleaseNotes = () => {
-  const [prInput, setPrInput] = useState('Fix concurrent mode tearing\nAdd new act() warnings\nOptimize DOM node reuse\nSupport custom elements in JSX');
+const formatReleaseNotes = (tag, repo, notes) => {
+  if (
+    notes.raw &&
+    !notes.features?.length &&
+    !notes.bug_fixes?.length &&
+    !notes.performance?.length &&
+    !notes.breaking_changes?.length
+  ) {
+    return `# ${repo} ${tag}\n\n${notes.raw}`;
+  }
+
+  const sections = [
+    ['New Features', notes.features || []],
+    ['Bug Fixes', notes.bug_fixes || []],
+    ['Performance Improvements', notes.performance || []],
+    ['Breaking Changes', notes.breaking_changes || []],
+  ];
+
+  const body = sections
+    .filter(([, items]) => items.length > 0)
+    .map(([heading, items]) => `### ${heading}\n${items.map(item => `- ${item}`).join('\n')}`)
+    .join('\n\n');
+
+  return `# ${repo} ${tag}\n\n${body || 'No merged PRs found for release notes.'}`;
+};
+
+const ReleaseNotes = ({ connectedRepo }) => {
   const [version, setVersion] = useState('v18.3.0');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedNotes, setGeneratedNotes] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleGenerate = async () => {
-    if (!prInput.trim() || !version.trim()) return;
+    if (!connectedRepo || !version.trim()) return;
 
     setIsGenerating(true);
-    
-    const prompt = `Version: ${version}\nMerged PRs:\n${prInput}`;
-    
-    const systemContext = `You are a developer release notes writer. Given these merged PR titles, generate professional release notes. 
-    Categorize each PR into exactly these categories if applicable: 
-    - ✨ New Features
-    - 🐛 Bug Fixes
-    - ⚡ Performance Improvements
-    - 🔧 Other Changes
-    
-    Output format should be clean Markdown. 
-    Use a main header for the version.
-    Use H3 (###) for categories.
-    Use bullet points for the PRs.
-    Make it sound like a senior developer wrote it. Do not include introductory/outro conversational text, just the markdown.`;
+    setError(null);
 
     try {
-      const response = await callGemini(prompt, systemContext);
-      setGeneratedNotes(response);
+      const response = await generateReleaseNotes(connectedRepo);
+      setGeneratedNotes(formatReleaseNotes(version, connectedRepo, response));
     } catch (error) {
-      console.error("Failed to generate release notes:", error);
-      setGeneratedNotes("Error generating release notes. Please try again.");
+      console.error('Failed to generate release notes:', error);
+      setError(error.message || 'Error generating release notes. Please try again.');
+      setGeneratedNotes(null);
     } finally {
       setIsGenerating(false);
     }
@@ -49,20 +62,19 @@ const ReleaseNotes = () => {
 
   const downloadFile = () => {
     if (generatedNotes) {
-      const element = document.createElement("a");
-      const file = new Blob([generatedNotes], {type: 'text/markdown'});
+      const element = document.createElement('a');
+      const file = new Blob([generatedNotes], { type: 'text/markdown' });
       element.href = URL.createObjectURL(file);
       element.download = `release-notes-${version}.md`;
-      document.body.appendChild(element); // Required for this to work in FireFox
+      document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
     }
   };
 
-  // Very basic markdown renderer for the generated notes
   const renderMarkdown = (text) => {
     if (!text) return null;
-    
+
     const lines = text.split('\n');
     return lines.map((line, index) => {
       if (line.startsWith('# ')) {
@@ -88,10 +100,22 @@ const ReleaseNotes = () => {
     });
   };
 
+  if (!connectedRepo) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center text-center">
+        <div className="w-20 h-20 bg-git-card rounded-full flex items-center justify-center mb-6">
+          <FileText size={32} className="text-git-muted" />
+        </div>
+        <h2 className="text-2xl font-bold mb-2">Connect a Repository</h2>
+        <p className="text-git-muted max-w-md">
+          Enter a GitHub repository in the sidebar to generate release notes through the backend.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
-      
-      {/* Left Panel - Input (40%) */}
       <div className="w-full md:w-5/12 glass-panel p-6 flex flex-col h-full">
         <div className="flex items-center space-x-3 mb-6">
           <div className="p-2 bg-green-500/10 rounded-lg flex items-center justify-center">
@@ -103,7 +127,14 @@ const ReleaseNotes = () => {
         <div className="space-y-5 flex-1 flex flex-col">
           <div>
             <label className="block text-sm font-semibold text-git-muted mb-2 flex items-center">
-              <Tag size={14} className="mr-2" /> Version Tag
+              <Github size={14} className="mr-2" /> Repository
+            </label>
+            <input type="text" value={connectedRepo} readOnly className="input-field" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-git-muted mb-2 flex items-center">
+              <FileText size={14} className="mr-2" /> Version Tag
             </label>
             <input
               type="text"
@@ -113,24 +144,15 @@ const ReleaseNotes = () => {
               className="input-field"
             />
           </div>
-          
-          <div className="flex-1 flex flex-col min-h-[200px]">
-            <label className="block text-sm font-semibold text-git-muted mb-2 flex items-center">
-              <FileText size={14} className="mr-2" /> Merged PR Titles
-            </label>
-            <div className="text-xs text-git-muted mb-2">Paste one PR title per line</div>
-            <textarea
-              value={prInput}
-              onChange={(e) => setPrInput(e.target.value)}
-              placeholder="Fix navbar bug&#10;Add new dashboard widgets&#10;Optimize image loading"
-              className="input-field flex-1 resize-none font-mono text-sm leading-relaxed"
-            />
+
+          <div className="flex-1 rounded-lg border border-git-border bg-git-dark p-4 text-sm text-git-muted leading-relaxed">
+            Release notes are generated by the backend from merged PRs fetched through Coral.
           </div>
         </div>
 
-        <button 
+        <button
           onClick={handleGenerate}
-          disabled={isGenerating || !prInput.trim()}
+          disabled={isGenerating || !connectedRepo}
           className="btn-primary w-full mt-6 py-3 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
@@ -147,19 +169,16 @@ const ReleaseNotes = () => {
         </button>
       </div>
 
-      {/* Right Panel - Output (60%) */}
       <div className="w-full md:w-7/12 flex flex-col gap-4 h-full">
         <div className="glass-panel flex-1 p-0 overflow-hidden flex flex-col relative">
-          
-          {/* Header Action Bar */}
           <div className="p-4 border-b border-git-border bg-[#161b22]/80 backdrop-blur-md z-10 flex justify-between items-center">
             <div className="flex items-center space-x-2 text-git-muted text-sm">
               <Calendar size={16} />
               <span>{new Date().toLocaleDateString()}</span>
             </div>
-            
+
             <div className="flex space-x-2">
-              <button 
+              <button
                 onClick={copyToClipboard}
                 disabled={!generatedNotes}
                 className="btn-secondary text-sm flex items-center py-1.5 disabled:opacity-50"
@@ -167,7 +186,7 @@ const ReleaseNotes = () => {
               >
                 <Copy size={16} className="mr-2" /> Copy
               </button>
-              <button 
+              <button
                 onClick={downloadFile}
                 disabled={!generatedNotes}
                 className="btn-secondary text-sm flex items-center py-1.5 disabled:opacity-50"
@@ -178,12 +197,17 @@ const ReleaseNotes = () => {
             </div>
           </div>
 
-          {/* Document Content */}
           <div className="flex-1 overflow-y-auto p-8">
-            {!generatedNotes && !isGenerating && (
+            {!generatedNotes && !isGenerating && !error && (
               <div className="h-full flex flex-col items-center justify-center text-git-muted opacity-50 space-y-4">
                 <FileText size={48} className="text-git-border" />
                 <p>Generated release notes will appear here.</p>
+              </div>
+            )}
+
+            {error && !isGenerating && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg p-4 text-sm">
+                {error}
               </div>
             )}
 
@@ -195,7 +219,6 @@ const ReleaseNotes = () => {
                   <div className="h-4 bg-git-border/40 rounded w-full"></div>
                   <div className="h-4 bg-git-border/40 rounded w-5/6"></div>
                   <div className="h-4 bg-git-border/40 rounded w-4/5 mb-6"></div>
-                  
                   <div className="h-6 bg-git-border/70 rounded w-1/4"></div>
                   <div className="h-4 bg-git-border/40 rounded w-11/12"></div>
                   <div className="h-4 bg-git-border/40 rounded w-full"></div>
@@ -207,7 +230,7 @@ const ReleaseNotes = () => {
               <div className="markdown-preview max-w-3xl mx-auto">
                 <div className="bg-git-dark border border-git-border rounded-xl p-8 shadow-inner">
                   {renderMarkdown(generatedNotes)}
-                  
+
                   <div className="mt-12 pt-6 border-t border-git-border text-center">
                     <p className="text-xs text-git-muted italic flex items-center justify-center">
                       Generated by Gitmind-AI <Sparkles size={12} className="ml-1 text-accent-blue" />
