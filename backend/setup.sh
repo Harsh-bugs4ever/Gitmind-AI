@@ -1,4 +1,7 @@
 #!/bin/bash
+set -e
+
 # Install Coral on the server
 curl -fsSL https://withcoral.com/install.sh -o coral-install.sh
+sh coral-install.sh
 export PATH="$HOME/.local/bin:$PATH"

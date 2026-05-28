@@ -4,6 +4,10 @@
 Development: http://localhost:8000
 Production: https://gitmind-api.onrender.com
 
+## AI Provider
+GitMind uses Google Gemini for natural-language-to-SQL generation,
+summarisation, duplicate-analysis prompts, and release-note generation.
+
 ## Endpoints
 
 ### 1. Chat
@@ -21,37 +25,67 @@ Response:
 }
 
 ### 2. Issues
-GET /api/issues?owner=facebook&repo=react
+POST /api/issues/embed
+Request:
+{
+  "issue_id": "123",
+  "text": "Issue title and body"
+}
 Response:
 {
-  "issues": [...],
-  "duplicates": [
+  "issue_id": "123",
+  "stored": true,
+  "dimensions": 384
+}
+
+POST /api/issues/check-duplicate
+Request:
+{
+  "text": "Issue title and body",
+  "owner": "facebook",
+  "repo": "react"
+}
+Response:
+{
+  "matches": [
     {
-      "issue_1": 123,
-      "issue_2": 456,
+      "issue_id": "456",
       "similarity": 0.91
     }
   ]
 }
 
 ### 3. Release Notes
-POST /api/release-notes
-Request:
-{
-  "owner": "facebook",
-  "repo": "react"
-}
+GET /api/releases/generate?owner=facebook&repo=react
 Response:
 {
-  "notes": "This release includes..."
+  "features": ["..."],
+  "bug_fixes": ["..."],
+  "performance": ["..."],
+  "breaking_changes": ["..."],
+  "raw": "{...}"
 }
 
-### 4. Dashboard
-GET /api/dashboard?owner=facebook&repo=react
+### 4. Repository Stats
+GET /api/repo/stats?owner=facebook&repo=react
 Response:
 {
   "open_issues": 23,
-  "merged_prs": 45,
-  "contributors": 12,
+  "pr_merge_rate": 0.82,
+  "contributor_count": 12,
   "stale_prs": 3
+}
+
+### 5. Repository Trends
+GET /api/repo/trends?owner=facebook&repo=react
+Response:
+{
+  "owner": "facebook",
+  "repo": "react",
+  "trends": [
+    {
+      "week": "2026-05-25",
+      "issue_count": 14
+    }
+  ]
 }
