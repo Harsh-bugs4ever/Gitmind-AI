@@ -16,6 +16,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app import coral, gemini
+from app import coral, gemini
 from app.models import ChatRequest, ChatResponse
 
 logger = logging.getLogger(__name__)
@@ -27,12 +28,16 @@ router = APIRouter(prefix="/api/chat", tags=["Chat"])
 async def chat(body: ChatRequest) -> ChatResponse:
     """
     1. Convert *question* → SQL using Gemini.
+    1. Convert *question* → SQL using Gemini.
     2. Execute the SQL with `coral sql`.
+    3. Summarise the raw result using Gemini.
     3. Summarise the raw result using Gemini.
     4. Return the answer + the generated SQL for transparency.
     """
     # Step 1 — generate SQL
+    # Step 1 — generate SQL
     try:
+        sql = gemini.generate_sql(body.question, body.owner, body.repo)
         sql = gemini.generate_sql(body.question, body.owner, body.repo)
     except Exception as exc:
         logger.exception("SQL generation failed")
@@ -46,7 +51,9 @@ async def chat(body: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     # Step 3 — summarise result
+    # Step 3 — summarise result
     try:
+        answer = gemini.summarise_query_result(body.question, sql, raw_result)
         answer = gemini.summarise_query_result(body.question, sql, raw_result)
     except Exception as exc:
         logger.exception("Result summarisation failed")

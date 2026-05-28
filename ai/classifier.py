@@ -1,120 +1,99 @@
 """
-GitMind — ai/classifier.py
-============================
-Issue classification using Gemini.
+GitMind — ai/embeddings.py
+===========================
+Duplicate Issue Detection using sentence-transformers.
 
-Classifies a GitHub issue into:
-  - type  : bug | feature | enhancement | question | documentation | other
-  - priority : high | medium | low
-  - summary  : one-sentence plain-English summary
-
-Usage (backend can import this for the webhook pipeline):
-    from ai.classifier import classify_issue
+Usage (backend imports this):
+    from ai.embeddings import embed, find_similar
 """
 from __future__ import annotations
 
-import json
 import logging
-import os
-
-import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-_MODEL = "gemini-1.5-flash"
+# Lazy-load model — downloads ~90MB once, then cached automatically
+_MODEL = None
+
+def _get_model():
+    global _MODEL
+    if _MODEL is None:
+        from sentence_transformers import SentenceTransformer
+        logger.info("Loading sentence-transformers model...")
+        _MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+        logger.info("Model ready — 384-dim embeddings.")
+    return _MODEL
 
 
-def classify_issue(title: str, body: str = "") -> dict:
+def embed(text: str) -> list[float]:
     """
-    Classify a GitHub issue using Gemini.
+    Generate a 384-dim embedding vector for an issue.
 
     Args:
-        title : issue title string
-        body  : issue body/description (can be empty)
+        text : issue title + body combined
+               e.g. "Login crashes on iOS 17 — App freezes when tapping login"
 
     Returns:
-        dict with keys:
-            type     : "bug" | "feature" | "enhancement" | "question" | "documentation" | "other"
-            priority : "high" | "medium" | "low"
-            summary  : one-sentence plain-English summary of the issue
-
-    Example:
-        classify_issue("App crashes on login", "Steps to reproduce: tap login button...")
-        → {"type": "bug", "priority": "high", "summary": "App crashes when the login button is tapped."}
+        List of 384 floats (L2-normalised).
+        Backend stores this in PostgreSQL pgvector column.
     """
-    combined = f"Title: {title}\n\nDescription:\n{body[:2000]}" if body else f"Title: {title}"
-
-    prompt = f"""You are a GitHub issue triaging assistant.
-
-Analyse this GitHub issue and classify it:
-
-{combined}
-
-Return ONLY a valid JSON object — no markdown, no explanation, no backticks.
-
-Rules:
-- type     must be one of: bug, feature, enhancement, question, documentation, other
-- priority must be one of: high, medium, low
-  - high   = crashes, data loss, security issue, blocking users
-  - medium = broken feature, performance problem, UX issue
-  - low    = minor cosmetic, typo, nice-to-have
-- summary  = one sentence (max 20 words) describing what the issue is about
-
-Required format:
-{{
-  "type": "bug",
-  "priority": "high",
-  "summary": "App crashes when the login button is tapped on iOS."
-}}"""
-
-    try:
-        model = genai.GenerativeModel(_MODEL)
-        response = model.generate_content(prompt)
-        raw = response.text.strip()
-
-        # Strip markdown fences if model adds them
-        if raw.startswith("```"):
-            lines = raw.split("\n")
-            raw = "\n".join(line for line in lines if not line.startswith("```")).strip()
-
-        parsed = json.loads(raw)
-
-        # Validate and sanitise values
-        valid_types = {"bug", "feature", "enhancement", "question", "documentation", "other"}
-        valid_priorities = {"high", "medium", "low"}
-
-        result = {
-            "type":     parsed.get("type", "other") if parsed.get("type") in valid_types else "other",
-            "priority": parsed.get("priority", "medium") if parsed.get("priority") in valid_priorities else "medium",
-            "summary":  str(parsed.get("summary", title))[:200],
-        }
-
-        logger.info("classify_issue OK — type=%s priority=%s", result["type"], result["priority"])
-        return result
-
-    except (json.JSONDecodeError, Exception) as exc:
-        logger.exception("Gemini classify_issue failed: %s", exc)
-        # Safe fallback — never crash the webhook handler
-        return {
-            "type":     "other",
-            "priority": "medium",
-            "summary":  title[:200],
-        }
+    model = _get_model()
+    vector = model.encode(text, normalize_embeddings=True)
+    return vector.tolist()
 
 
-# ---------------------------------------------------------------------------
-# Quick test
-# ---------------------------------------------------------------------------
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """
+    Cosine similarity between two normalised vectors.
+    Returns float in [-1.0, 1.0]. 1.0 = identical, 0.0 = unrelated.
+    """
+    return sum(x * y for x, y in zip(a, b))
+
+
+def find_similar(
+    query_embedding: list[float],
+    stored: list[tuple[str, list[float]]],
+    threshold: float = 0.80,
+) -> list[tuple[str, float]]:
+    """
+    Find duplicate/similar issues by comparing embeddings.
+
+    Args:
+        query_embedding : embedding of the NEW issue being checked
+        stored          : list of (issue_id, embedding) fetched from DB
+        threshold       : similarity cutoff — 0.80 = similar, 0.90 = near identical
+
+    Returns:
+        List of (issue_id, score) above threshold, sorted highest first.
+        Backend uses this to show "possible duplicate" warnings on the UI.
+    """
+    if not stored:
+        return []
+
+    results = []
+    for issue_id, stored_vec in stored:
+        try:
+            score = cosine_similarity(query_embedding, stored_vec)
+            if score >= threshold:
+                results.append((issue_id, round(score, 4)))
+        except Exception as e:
+            logger.warning("Skipping issue %s: %s", issue_id, e)
+
+    results.sort(key=lambda x: x[1], reverse=True)
+    logger.info("find_similar: %d checked, %d matched (threshold=%.2f)",
+                len(stored), len(results), threshold)
+    return results
+
+
+# ── Quick test ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    tests = [
-        ("App crashes on login", "Tapping the login button on iOS 17 causes an immediate crash."),
-        ("Add dark mode support", "Would be great to have a dark mode toggle in settings."),
-        ("Typo in README", "Line 42 says 'recieve' — should be 'receive'."),
-        ("How do I reset my password?", ""),
-    ]
+    e1 = embed("App crashes on login")
+    e2 = embed("Login button freezes the application")
+    e3 = embed("Dark mode not working on settings page")
 
-    for title, body in tests:
-        result = classify_issue(title, body)
-        print(f"\nTitle  : {title}")
-        print(f"Result : {result}")
+    stored = [("issue-1", e1), ("issue-3", e3)]
+    matches = find_similar(e2, stored)
+
+    print("Similar issues found:")
+    for issue_id, score in matches:
+        print(f"  {issue_id} — score: {score}")
