@@ -14,14 +14,15 @@ import sys
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.database import close_pool, init_db, init_pool
 from app.models import HealthResponse
-from app.routers import chat, issues, releases, repo, webhooks
+from app.auth import require_auth
+from app.routers import auth, chat, dashboard, issues, release_notes, releases, repo, webhooks
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -89,11 +90,14 @@ def create_app() -> FastAPI:
     )
 
     # --- Routers ---
-    application.include_router(chat.router)
-    application.include_router(issues.router)
-    application.include_router(releases.router)
-    application.include_router(repo.router)
-    application.include_router(webhooks.router)
+    application.include_router(auth.router)
+    application.include_router(chat.router, dependencies=[Depends(require_auth)])
+    application.include_router(issues.router, dependencies=[Depends(require_auth)])
+    application.include_router(releases.router, dependencies=[Depends(require_auth)])
+    application.include_router(release_notes.router, dependencies=[Depends(require_auth)])
+    application.include_router(dashboard.router, dependencies=[Depends(require_auth)])
+    application.include_router(repo.router, dependencies=[Depends(require_auth)])
+    application.include_router(webhooks.router, dependencies=[Depends(require_auth)])
 
     # --- Health check ---
     @application.get(

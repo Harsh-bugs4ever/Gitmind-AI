@@ -162,8 +162,8 @@ const Navbar = ({ connectedRepo }) => {
               {user ? (
                 <>
                   <div className="px-4 py-3 border-b border-git-border bg-git-dark/50">
-                    <p className="text-sm text-white font-semibold truncate">{user.name || 'User'}</p>
-                    <p className="text-xs text-git-muted truncate">{user.email}</p>
+                    <p className="text-sm text-white font-semibold truncate">{user.name || user.login || 'User'}</p>
+                    <p className="text-xs text-git-muted truncate">@{user.login || 'github-user'}</p>
                   </div>
                   <div className="p-2">
                     <button 
