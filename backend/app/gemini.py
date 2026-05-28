@@ -177,7 +177,6 @@ This module powers the AI-backed backend flows:
 - summarise Coral query results
 - categorise pull requests into release notes
 """
-from __future__ import annotations
 
 import json
 import logging
