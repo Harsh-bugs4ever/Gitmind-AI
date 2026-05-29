@@ -9,7 +9,7 @@ const Landing = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-git-dark text-white relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-black text-white relative overflow-hidden font-sans">
       <Hero3D />
       {/* Background glowing effects */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent-blue/20 rounded-full blur-[120px] pointer-events-none"></div>
