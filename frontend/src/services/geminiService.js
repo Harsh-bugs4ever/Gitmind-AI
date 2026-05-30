@@ -2,6 +2,15 @@ import axios from 'axios';
 
 const backendBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
+const apiClient = axios.create();
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('gitmind_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 const parseConnectedRepo = (connectedRepo) => {
   const [owner, repo] = (connectedRepo || '').split('/');
 
@@ -25,7 +34,7 @@ export const askRepoQuestion = async (question, connectedRepo) => {
   const { owner, repo } = parseConnectedRepo(connectedRepo);
 
   try {
-    const { data } = await axios.post(`${backendBaseUrl}/api/chat`, {
+    const { data } = await apiClient.post(`${backendBaseUrl}/api/chat`, {
       question,
       owner,
       repo,
@@ -43,7 +52,7 @@ export const checkDuplicateIssue = async ({ title, description = '', connectedRe
   const text = [title, description].filter(Boolean).join('\n\n');
 
   try {
-    const { data } = await axios.post(`${backendBaseUrl}/api/issues/check-duplicate`, {
+    const { data } = await apiClient.post(`${backendBaseUrl}/api/issues/check-duplicate`, {
       text,
       owner,
       repo,
@@ -60,7 +69,7 @@ export const generateReleaseNotes = async (connectedRepo) => {
   const { owner, repo } = parseConnectedRepo(connectedRepo);
 
   try {
-    const { data } = await axios.get(`${backendBaseUrl}/api/releases/generate`, {
+    const { data } = await apiClient.get(`${backendBaseUrl}/api/releases/generate`, {
       params: { owner, repo },
     });
 
@@ -75,7 +84,7 @@ export const getRepoStats = async (connectedRepo) => {
   const { owner, repo } = parseConnectedRepo(connectedRepo);
 
   try {
-    const { data } = await axios.get(`${backendBaseUrl}/api/repo/stats`, {
+    const { data } = await apiClient.get(`${backendBaseUrl}/api/repo/stats`, {
       params: { owner, repo },
     });
 
@@ -90,7 +99,7 @@ export const getRepoTrends = async (connectedRepo) => {
   const { owner, repo } = parseConnectedRepo(connectedRepo);
 
   try {
-    const { data } = await axios.get(`${backendBaseUrl}/api/repo/trends`, {
+    const { data } = await apiClient.get(`${backendBaseUrl}/api/repo/trends`, {
       params: { owner, repo },
     });
 
@@ -106,7 +115,7 @@ export const getRepoCommits = async (connectedRepo, options = {}) => {
   const { page = 1, pageSize = 10, ref = 'HEAD' } = options;
 
   try {
-    const { data } = await axios.get(`${backendBaseUrl}/api/repo/commits`, {
+    const { data } = await apiClient.get(`${backendBaseUrl}/api/repo/commits`, {
       params: { owner, repo, page, page_size: pageSize, ref },
     });
 

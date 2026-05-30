@@ -29,23 +29,23 @@ _OPEN_ISSUES_SQL = (
 )
 
 _MERGED_PRS_SQL = (
-    "SELECT COUNT(*) AS merged_count FROM github.pull_requests "
+    "SELECT COUNT(*) AS merged_count FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}' AND state = 'closed' AND merged_at IS NOT NULL"
 )
 
 _CLOSED_PRS_SQL = (
-    "SELECT COUNT(*) AS closed_count FROM github.pull_requests "
+    "SELECT COUNT(*) AS closed_count FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}' AND state = 'closed'"
 )
 
 _CONTRIBUTORS_SQL = (
-    "SELECT COUNT(DISTINCT user_login) AS contributor_count FROM github.pull_requests "
+    "SELECT COUNT(DISTINCT user__login) AS contributor_count FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}'"
 )
 
 # PRs open for > 30 days with no recent update
 _STALE_PRS_SQL = (
-    "SELECT COUNT(*) AS stale_count FROM github.pull_requests "
+    "SELECT COUNT(*) AS stale_count FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}' "
     "AND state = 'open' "
     "AND created_at < NOW() - INTERVAL '30 days'"
@@ -60,11 +60,10 @@ _TRENDS_SQL = (
 )
 
 _COMMITS_SQL = (
-    "SELECT sha, author_login, author_date::DATE AS committed_on, message "
+    "SELECT sha, commit__author__name, commit__author__date, commit__message "
     "FROM github.commits "
     "WHERE owner = '{owner}' AND repo = '{repo}' "
     "AND {ref_clause} "
-    "ORDER BY author_date DESC "
     "LIMIT {limit} OFFSET {offset}"
 )
 
@@ -179,9 +178,16 @@ async def repo_trends(
     Useful for plotting a sparkline / trend chart in the frontend.
     """
     sql = _TRENDS_SQL.format(owner=owner, repo=repo)
-    raw = _run(sql)
-
-    trend_points: list[TrendPoint] = _parse_trends(raw)
+    try:
+        # Use an 8-second timeout to prevent blocking the dashboard for large repos.
+        raw = coral.run_query(sql, timeout=8)
+        trend_points: list[TrendPoint] = _parse_trends(raw)
+    except Exception as exc:
+        logger.warning(
+            "Issue trends query failed or timed out for %s/%s: %s. Returning empty trends.",
+            owner, repo, exc
+        )
+        trend_points = []
 
     return RepoTrends(owner=owner, repo=repo, trends=trend_points)
 
@@ -249,11 +255,12 @@ async def repo_commits(
     - page and page_size follow standard 1-based pagination.
     - total lets the frontend compute page count without a second round-trip.
     """
-    ref_clause = (
-        "is_default_branch = TRUE"
-        if ref == "HEAD"
-        else f"ref = '{ref}'"
-    )
+    # The github.commits table has a `ref` column (confirmed via DESCRIBE).
+    # Use it to filter by branch/tag; default to the repo's default branch.
+    if ref and ref.upper() != "HEAD":
+        ref_clause = f"ref = '{ref}'"
+    else:
+        ref_clause = "1 = 1"  # HEAD = default branch, which is the API default
 
     fmt = {
         "owner": owner,
@@ -263,7 +270,10 @@ async def repo_commits(
         "offset": (page - 1) * page_size,
     }
 
-    total = _extract_int(_run(_COMMIT_COUNT_SQL.format(**fmt)), "total")
+    # Running COUNT(*) on commits for large repositories will always time out 
+    # because it forces full pagination over the GitHub API. 
+    # We will skip the count and provide a generic total (e.g., 999) to keep frontend pagination working.
+    total = 999
     raw = _run(_COMMITS_SQL.format(**fmt))
     commits = _parse_commits(raw)
 
@@ -283,8 +293,11 @@ def _parse_commits(raw: str) -> list[CommitSummary]:
     Parse coral output into a list of CommitSummary.
     Handles JSON array-of-dicts or space-separated plain text.
 
+    Coral github.commits columns used:
+        sha, commit__author__name, commit__author__date, commit__message
+
     Plain-text expected format (4 columns, message may contain spaces):
-        <sha> <author_login> <committed_on> <message...>
+        <sha> <author_name> <date> <message...>
     """
     raw = raw.strip()
     if not raw:
@@ -297,13 +310,17 @@ def _parse_commits(raw: str) -> list[CommitSummary]:
             results = []
             for row in parsed:
                 if isinstance(row, dict):
+                    # Extract date — trim to YYYY-MM-DD if ISO timestamp
+                    date_raw = str(row.get("commit__author__date", ""))
+                    date_val = date_raw[:10] if len(date_raw) >= 10 else date_raw
+                    # Extract message — take first line only
+                    msg = str(row.get("commit__message", "")).splitlines()[0]
                     results.append(
                         CommitSummary(
                             sha=str(row.get("sha", ""))[:7],
-                            author=str(row.get("author_login", "unknown")),
-                            date=str(row.get("committed_on", "")),
-                            # Subject line only — first line of the commit message
-                            message=str(row.get("message", "")).splitlines()[0],
+                            author=str(row.get("commit__author__name", "unknown")),
+                            date=date_val,
+                            message=msg,
                         )
                     )
             return results

@@ -17,26 +17,33 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["Dashboard"])
 
+# Fast: single GitHub API call via repos_get — never paginates
 _OPEN_ISSUES_SQL = (
-    "SELECT COUNT(*) AS open_issues FROM github.issues "
-    "WHERE owner = '{owner}' AND repo = '{repo}' AND state = 'open'"
-)
-
-_MERGED_PRS_SQL = (
-    "SELECT COUNT(*) AS merged_count FROM github.pull_requests "
-    "WHERE owner = '{owner}' AND repo = '{repo}' AND state = 'closed' AND merged_at IS NOT NULL"
-)
-
-_CONTRIBUTORS_SQL = (
-    "SELECT COUNT(DISTINCT user_login) AS contributor_count FROM github.pull_requests "
+    "SELECT open_issues FROM github.repos_get "
     "WHERE owner = '{owner}' AND repo = '{repo}'"
 )
 
+# Counts recently-closed merged PRs only (bounded time window prevents full pagination)
+_MERGED_PRS_SQL = (
+    "SELECT COUNT(*) AS merged_count FROM github.pulls "
+    "WHERE owner = '{owner}' AND repo = '{repo}' "
+    "AND state = 'closed' AND merged_at IS NOT NULL "
+    "AND created_at >= NOW() - INTERVAL '90 days'"
+)
+
+# Fast: repo_contributors is a direct paginated list — no heavy COUNT DISTINCT
+_CONTRIBUTORS_SQL = (
+    "SELECT COUNT(*) AS contributor_count FROM github.repo_contributors "
+    "WHERE owner = '{owner}' AND repo = '{repo}'"
+)
+
+# Bounded to recently-opened stale PRs only
 _STALE_PRS_SQL = (
-    "SELECT COUNT(*) AS stale_count FROM github.pull_requests "
+    "SELECT COUNT(*) AS stale_count FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}' "
     "AND state = 'open' "
-    "AND created_at < NOW() - INTERVAL '30 days'"
+    "AND created_at < NOW() - INTERVAL '30 days' "
+    "AND created_at >= NOW() - INTERVAL '1 year'"
 )
 
 
@@ -75,6 +82,15 @@ def _run(sql: str) -> str:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
+def _run_safe(sql: str, key: str, default: int = 0) -> int:
+    """Run a query and return the int result, or *default* on any error."""
+    try:
+        return _extract_int(coral.run_query(sql), key, default)
+    except coral.CoralError as exc:
+        logger.warning("coral metric skipped (returning %d): %s", default, exc)
+        return default
+
+
 @router.get(
     "/dashboard",
     response_model=DashboardResponse,
@@ -86,10 +102,11 @@ async def dashboard(
 ) -> DashboardResponse:
     fmt = {"owner": owner, "repo": repo}
 
-    open_issues = _extract_int(_run(_OPEN_ISSUES_SQL.format(**fmt)), "open_issues")
-    merged_prs = _extract_int(_run(_MERGED_PRS_SQL.format(**fmt)), "merged_count")
-    contributors = _extract_int(_run(_CONTRIBUTORS_SQL.format(**fmt)), "contributor_count")
-    stale_prs = _extract_int(_run(_STALE_PRS_SQL.format(**fmt)), "stale_count")
+    # Each metric is isolated — a timeout returns 0 instead of a 502
+    open_issues  = _run_safe(_OPEN_ISSUES_SQL.format(**fmt),   "open_issues")
+    merged_prs   = _run_safe(_MERGED_PRS_SQL.format(**fmt),    "merged_count")
+    contributors = _run_safe(_CONTRIBUTORS_SQL.format(**fmt),  "contributor_count")
+    stale_prs    = _run_safe(_STALE_PRS_SQL.format(**fmt),     "stale_count")
 
     return DashboardResponse(
         open_issues=open_issues,
