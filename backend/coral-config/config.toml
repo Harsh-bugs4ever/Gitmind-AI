@@ -1,0 +1,12 @@
+version = 1
+
+[workspaces.default.sources.github]
+variables = { GITHUB_API_BASE = "https://api.github.com" }
+secrets = ["GITHUB_TOKEN"]
+origin = "bundled"
+
+[workspaces.default.sources.gmail]
+version = "0.1.0"
+variables = {}
+secrets = ["GMAIL_ACCESS_TOKEN"]
+origin = "imported"
