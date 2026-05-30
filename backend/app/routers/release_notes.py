@@ -17,11 +17,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/release-notes", tags=["Release Notes"])
 
 _MERGED_PRS_SQL = (
-    "SELECT title FROM github.pull_requests "
+    "SELECT title FROM github.pulls "
     "WHERE owner = '{owner}' AND repo = '{repo}' "
     "AND state = 'closed' AND merged_at IS NOT NULL "
-    "AND merged_at >= NOW() - INTERVAL '90 days' "
-    "ORDER BY merged_at DESC"
+    "LIMIT 50"
 )
 
 

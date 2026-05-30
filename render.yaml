@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: gitmind-backend
+    env: python
+    rootDir: backend
+    buildCommand: "sh setup.sh && pip install uv && uv pip install --system -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PATH
+        value: /opt/render/project/.local/bin:/usr/local/bin:/usr/bin:/bin
+      - key: PYTHON_VERSION
+        value: 3.12.0 # Adjust if you need a specific python version
