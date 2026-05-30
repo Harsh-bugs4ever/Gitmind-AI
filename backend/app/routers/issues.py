@@ -38,7 +38,6 @@ _ISSUES_SQL = (
     "SELECT number, title, state, created_at, updated_at "
     "FROM github.issues "
     "WHERE owner = '{owner}' AND repo = '{repo}' "
-    "ORDER BY created_at DESC "
     "LIMIT {limit}"
 )
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, GitMerge, Users, Clock, Search, GitPullRequest, CircleDot } from 'lucide-react';
+import { AlertCircle, GitMerge, Users, Clock, Search, GitPullRequest, CircleDot, GitCommit } from 'lucide-react';
 import { getRepoInfo, getIssues, getPullRequests, getContributors, getRepoAnalytics } from '../services/githubService';
 import { useAuth } from '../context/AuthContext';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -31,7 +31,7 @@ const Dashboard = ({ connectedRepo }) => {
       const [repoInfo, repoIssues, repoAnalytics, dashboardRes] = await Promise.all([
         getRepoInfo(owner, repo),
         getIssues(owner, repo),
-        getRepoAnalytics(owner, repo),
+        getRepoAnalytics(owner, repo, token),
         fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/dashboard?owner=${owner}&repo=${repo}`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -101,7 +101,8 @@ const Dashboard = ({ connectedRepo }) => {
     );
   }
 
-  if (!stats) return null;
+  if (!analytics) return null;
+  const { stats, trends, commitActivity, commits } = analytics;
 
   const openIssuesCount = backendMetrics?.open_issues ?? 0;
   const mergedPRsCount = backendMetrics?.merged_prs ?? 0;
