@@ -12,10 +12,9 @@ COPY . .
 RUN CORAL_VERSION=0.3.0 curl -fsSL https://withcoral.com/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# Copy Coral config
 RUN mkdir -p /root/.config/coral
 COPY coral-config/config.toml /root/.config/coral/config.toml
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/bin/sh", "-c", "coral source add github || true && uvicorn main:app --host 0.0.0.0 --port 8000"]
