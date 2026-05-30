@@ -93,6 +93,8 @@ const Dashboard = ({ connectedRepo }) => {
     );
   }
 
+
+
   const openIssuesCount = backendMetrics?.open_issues ?? 0;
   const mergedPRsCount = backendMetrics?.merged_prs ?? 0;
   const contributorsCount = backendMetrics?.contributors ?? 0;
