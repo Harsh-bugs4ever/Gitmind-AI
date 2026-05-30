@@ -28,12 +28,6 @@ def _get_model():
             )
             raise
     return _MODEL
-
-
-# ---------------------------------------------------------------------------
-# Public API - called by routers/issues.py
-# ---------------------------------------------------------------------------
-
 def embed(text: str) -> list[float]:
     """
     Generate a 384-dimensional L2-normalised embedding vector for the given text.
@@ -95,9 +89,7 @@ def find_similar(
         except (ValueError, TypeError) as exc:
             logger.warning("Skipping issue %s due to embedding error: %s", issue_id, exc)
 
-    # Sort by similarity descending (most similar first)
     results.sort(key=lambda x: x[1], reverse=True)
-
     logger.info(
         "find_similar: checked %d stored issues, found %d matches (threshold=%.2f)",
         len(stored), len(results), threshold,
