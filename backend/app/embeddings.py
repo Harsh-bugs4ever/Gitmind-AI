@@ -170,7 +170,7 @@ def find_similar(
         threshold       : cosine similarity cutoff (default 0.8)
 
     Returns:
-        List of (issue_id, score) sorted highest-first — only above threshold.
+        List of (issue_id, score) sorted highest-first - only above threshold.
         routers/issues.py wraps these into DuplicateMatch objects.
     """
     if not stored:
